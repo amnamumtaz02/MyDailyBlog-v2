@@ -40,19 +40,23 @@ pipeline {
     }
 
     post {
-        always {
+    always {
+        script {
+            def pusherEmail = sh(
+                script: "git log -1 --pretty=format:'%ae'",
+                returnStdout: true
+            ).trim()
             emailext(
-                subject: "Jenkins Test Results: ${currentBuild.result} - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                subject: "Test Results: ${currentBuild.result} - Build #${env.BUILD_NUMBER}",
                 body: """
-                    <h2>MyDailyBlog Test Results</h2>
-                    <p>Build Status: <b>${currentBuild.result}</b></p>
-                    <p>Job: ${env.JOB_NAME}</p>
-                    <p>Build Number: ${env.BUILD_NUMBER}</p>
-                    <p>Check console output: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    <h2>MyDailyBlog CI Results</h2>
+                    <p>Status: <b>${currentBuild.result}</b></p>
+                    <p>Build: ${env.BUILD_NUMBER}</p>
+                    <p>Console: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
                 """,
-                to: "${env.CHANGE_AUTHOR_EMAIL}",
+                to: "${pusherEmail}",
                 mimeType: 'text/html'
             )
         }
     }
-}
+}   
