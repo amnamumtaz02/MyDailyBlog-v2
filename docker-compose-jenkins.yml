@@ -1,0 +1,28 @@
+services:
+  db-jenkins:
+    image: postgres:15
+    container_name: blog-db-v2-jenkins
+    environment:
+      POSTGRES_USER: blogadmin
+      POSTGRES_PASSWORD: BlogPass123!
+      POSTGRES_DB: blogdb
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data_jenkins:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  app-jenkins:
+    image: mumtaz02/mydailyblog-app:latest
+    container_name: blog-app-v2-jenkins
+    depends_on:
+      - db-jenkins
+    environment:
+      DATABASE_URL: postgresql://blogadmin:BlogPass123!@db-jenkins:5432/blogdb
+      NEXTAUTH_SECRET: mysupersecretkey123456789
+      NEXTAUTH_URL: http://localhost:3001
+    ports:
+      - "3001:3000"
+
+volumes:
+  postgres_data_jenkins:
