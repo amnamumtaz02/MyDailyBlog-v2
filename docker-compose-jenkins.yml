@@ -19,7 +19,7 @@ services:
     environment:
       DATABASE_URL: postgresql://blogadmin:BlogPass123!@db-jenkins:5432/blogdb
       NEXTAUTH_SECRET: mysupersecretkey123456789
-      NEXTAUTH_URL: http://localhost:3001
+      NEXTAUTH_URL: http://localhost:3000
       PORT: 3000
     ports:
       - "3001:3000"
