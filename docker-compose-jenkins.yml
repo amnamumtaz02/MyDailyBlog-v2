@@ -6,7 +6,6 @@ services:
       POSTGRES_USER: blogadmin
       POSTGRES_PASSWORD: BlogPass123!
       POSTGRES_DB: blogdb
-      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - postgres_data_jenkins:/var/lib/postgresql/data
     ports:
@@ -21,6 +20,7 @@ services:
       DATABASE_URL: postgresql://blogadmin:BlogPass123!@db-jenkins:5432/blogdb
       NEXTAUTH_SECRET: mysupersecretkey123456789
       NEXTAUTH_URL: http://localhost:3001
+      PORT: 3000
     ports:
       - "3001:3000"
 
