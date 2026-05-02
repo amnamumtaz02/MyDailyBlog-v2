@@ -21,24 +21,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             },
             async authorize(credentials) {
                 const parsed = credentialsSchema.safeParse(credentials)
-
-                if (!parsed.success) {
-                    return null
-                }
+                if (!parsed.success) return null
 
                 const email = parsed.data.email.toLowerCase()
-                const user = await db.user.findUnique({
-                    where: { email },
-                })
-
-                if (!user) {
-                    return null
-                }
+                const user = await db.user.findUnique({ where: { email } })
+                if (!user) return null
 
                 const passwordMatch = await bcrypt.compare(parsed.data.password, user.password)
-                if (!passwordMatch) {
-                    return null
-                }
+                if (!passwordMatch) return null
 
                 return {
                     id: user.id,
@@ -52,14 +42,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         signIn: '/signin',
         error: '/signin',
     },
-    session: {
-        strategy: 'jwt',
-    },
+    session: { strategy: 'jwt' },
     callbacks: {
         jwt({ token, user }) {
-            if (user) {
-                token.id = user.id
-            }
+            if (user) token.id = user.id
             return token
         },
         session({ session, token }) {
