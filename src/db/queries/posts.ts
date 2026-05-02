@@ -2,8 +2,21 @@ import type { Post } from '@prisma/client'
 import { db } from '@/db'
 import { notFound } from 'next/navigation'
 
-export async function fetchPosts(): Promise<Post[]> {
+export interface PostWithAuthor extends Post {
+    author: {
+        name: string
+    }
+}
+
+export async function fetchPosts(): Promise<PostWithAuthor[]> {
     return await db.post.findMany({
+        include: {
+            author: {
+                select: {
+                    name: true,
+                },
+            },
+        },
         orderBy: [
             {
                 updatedAt: 'desc',
@@ -12,11 +25,18 @@ export async function fetchPosts(): Promise<Post[]> {
     })
 }
 
-export async function fetchPostById(id: string): Promise<Post | null> {
-    const post = await db.post.findFirst({
+export async function fetchPostById(id: string): Promise<PostWithAuthor> {
+    const post = await db.post.findUnique({
         where: {
-            id
-        }
+            id,
+        },
+        include: {
+            author: {
+                select: {
+                    name: true,
+                },
+            },
+        },
     })
 
     if (!post) {

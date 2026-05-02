@@ -1,6 +1,8 @@
 import { updatePost } from "@/app/actions/posts";
+import { auth } from "@/auth";
 import PostForm from "@/components/post-form";
 import { fetchPostById } from "@/db/queries/posts";
+import { notFound, redirect } from "next/navigation";
 
 interface PostsEditProps {
     params: {
@@ -9,9 +11,19 @@ interface PostsEditProps {
 }
 
 export default async function PostsEdit({ params }: PostsEditProps) {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        redirect('/signin');
+    }
+
     const { id } = params;
 
     const post = await fetchPostById(id)
+
+    if (!post || post.authorId !== session.user.id) {
+        notFound();
+    }
 
     const updateAction = updatePost.bind(null, id)
 
