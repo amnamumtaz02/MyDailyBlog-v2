@@ -1,33 +1,27 @@
 import { db } from '@/db'
 import bcrypt from 'bcryptjs'
 import NextAuth from 'next-auth'
-import Credentials from 'next-auth/providers/credentials'
-import { z } from 'zod'
+import CredentialsProvider from 'next-auth/providers/credentials'
 
-const credentialsSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(1),
-})
-
-export const { handlers, auth, signIn, signOut } = NextAuth({
-    secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
-    trustHost: true,
+export const authOptions = {
     providers: [
-        Credentials({
+        CredentialsProvider({
             name: 'Credentials',
             credentials: {
                 email: { label: 'Email', type: 'email' },
                 password: { label: 'Password', type: 'password' },
             },
             async authorize(credentials) {
-                const parsed = credentialsSchema.safeParse(credentials)
-                if (!parsed.success) return null
+                if (!credentials?.email || !credentials?.password) return null
 
-                const email = parsed.data.email.toLowerCase()
+                const email = (credentials.email as string).toLowerCase()
                 const user = await db.user.findUnique({ where: { email } })
                 if (!user) return null
 
-                const passwordMatch = await bcrypt.compare(parsed.data.password, user.password)
+                const passwordMatch = await bcrypt.compare(
+                    credentials.password as string,
+                    user.password
+                )
                 if (!passwordMatch) return null
 
                 return {
@@ -42,17 +36,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         signIn: '/signin',
         error: '/signin',
     },
-    session: { strategy: 'jwt' },
+    session: { strategy: 'jwt' as const },
     callbacks: {
-        jwt({ token, user }) {
+        jwt({ token, user }: any) {
             if (user) token.id = user.id
             return token
         },
-        session({ session, token }) {
+        session({ session, token }: any) {
             if (session.user && token.id) {
                 session.user.id = token.id as string
             }
             return session
         },
     },
-})
+}
+
+export default NextAuth(authOptions)
