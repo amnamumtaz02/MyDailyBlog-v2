@@ -1,3 +1,4 @@
+'use server'
 import { db } from '@/db'
 import bcrypt from 'bcryptjs'
 import NextAuth from 'next-auth'
@@ -27,19 +28,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 if (!user) return null
                 const passwordMatch = await bcrypt.compare(parsed.data.password, user.password)
                 if (!passwordMatch) return null
-                return { id: user.id, name: user.name, email: user.email }
+                return {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                }
             },
         }),
     ],
-    pages: { signIn: '/signin', error: '/signin' },
+    pages: {
+        signIn: '/signin',
+        error: '/signin',
+    },
     session: { strategy: 'jwt' },
     callbacks: {
-        jwt({ token, user }) {
+        jwt({ token, user }: any) {
             if (user) token.id = user.id
             return token
         },
-        session({ session, token }) {
-            if (session.user && token.id) session.user.id = token.id as string
+        session({ session, token }: any) {
+            if (session.user && token.id) {
+                session.user.id = token.id as string
+            }
             return session
         },
     },
