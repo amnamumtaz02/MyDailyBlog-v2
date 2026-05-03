@@ -15,7 +15,7 @@ export const sessionOptions: SessionOptions = {
     password: 'mysupersecretkey12345678901234!!',
     cookieOptions: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,
         sameSite: 'lax',
         path: '/',
     },
