@@ -24,6 +24,7 @@ services:
       AUTH_URL: http://13.206.144.86:3001     
       AUTH_TRUST_HOST: "true"
       PORT: 3000
+      NODE_OPTIONS: "--experimental-global-webcrypto"
     ports:
       - "3001:3000"
 
