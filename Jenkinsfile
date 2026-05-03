@@ -14,25 +14,7 @@ pipeline {
                 sh 'docker compose -f docker-compose-jenkins.yml up -d --build'
                 sh 'sleep 30'
                 sh 'docker exec blog-app-v2-jenkins npx prisma db push --accept-data-loss'
-                sh '''
-                cat > seed.js << 'EOF'
-const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcryptjs");
-const prisma = new PrismaClient();
-async function main() {
-  const hash = await bcrypt.hash("Test@1234", 10);
-  await prisma.user.upsert({
-    where: { email: "testuser@example.com" },
-    update: { password: hash },
-    create: { name: "Test User", email: "testuser@example.com", password: hash }
-  });
-  console.log("SUCCESS: Test user seeded!");
-}
-main().catch(console.error).finally(() => prisma.$disconnect());
-EOF
-                docker cp seed.js blog-app-v2-jenkins:/app/seed.js
-                docker exec blog-app-v2-jenkins node /app/seed.js
-                '''
+                sh '''docker exec blog-app-v2-jenkins node -e "const { PrismaClient } = require('@prisma/client'); const bcrypt = require('bcryptjs'); const prisma = new PrismaClient(); bcrypt.hash('Test@1234', 10).then(hash => prisma.user.upsert({ where: { email: 'testuser@example.com' }, update: { password: hash }, create: { name: 'Test User', email: 'testuser@example.com', password: hash } })).then(() => { console.log('SUCCESS: Test user seeded!'); process.exit(0); });"'''
             }
         }
         stage('Run Selenium Tests') {

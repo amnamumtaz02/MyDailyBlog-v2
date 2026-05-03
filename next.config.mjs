@@ -1,11 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['bcryptjs', 'jose', '@prisma/client']
-  },
-  webpack: (config) => {
-    config.optimization.minimize = false;
-    return config;
+    serverComponentsExternalPackages: ['bcryptjs']
   }
 };
 export default nextConfig;
