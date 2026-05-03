@@ -1,7 +1,9 @@
 import PostDelete from "@/components/post-delete";
-import { auth } from "@/auth";
 import { fetchPostById } from "@/db/queries/posts";
+import { sessionOptions, type SessionData } from "@/lib/session";
+import { getIronSession } from "iron-session";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 interface PostDetailProps {
@@ -11,14 +13,14 @@ interface PostDetailProps {
 }
 
 export default async function PostDetail({ params }: PostDetailProps) {
-    const session = await auth();
+    const session = await getIronSession<SessionData>(cookies(), sessionOptions);
 
-    if (!session?.user?.id) {
+    if (!session.user?.userId) {
         redirect('/signin');
     }
 
     const post = await fetchPostById(params.id);
-    const isAuthor = session.user.id === post.authorId;
+    const isAuthor = session.user.userId === post.authorId;
     const formattedDate = new Intl.DateTimeFormat('en-US', {
         dateStyle: 'long',
     }).format(post.createdAt);

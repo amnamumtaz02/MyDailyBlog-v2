@@ -1,7 +1,9 @@
 import { updatePost } from "@/app/actions/posts";
-import { auth } from "@/auth";
 import PostForm from "@/components/post-form";
 import { fetchPostById } from "@/db/queries/posts";
+import { sessionOptions, type SessionData } from "@/lib/session";
+import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 interface PostsEditProps {
@@ -11,9 +13,9 @@ interface PostsEditProps {
 }
 
 export default async function PostsEdit({ params }: PostsEditProps) {
-    const session = await auth();
+    const session = await getIronSession<SessionData>(cookies(), sessionOptions);
 
-    if (!session?.user?.id) {
+    if (!session.user?.userId) {
         redirect('/signin');
     }
 
@@ -21,7 +23,7 @@ export default async function PostsEdit({ params }: PostsEditProps) {
 
     const post = await fetchPostById(id)
 
-    if (!post || post.authorId !== session.user.id) {
+    if (!post || post.authorId !== session.user.userId) {
         notFound();
     }
 

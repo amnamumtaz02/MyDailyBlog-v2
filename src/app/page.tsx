@@ -1,13 +1,16 @@
-import { auth, signOut } from "@/auth";
+import { signOut } from "@/app/actions/auth";
 import { fetchPosts } from "@/db/queries/posts";
+import { sessionOptions, type SessionData } from "@/lib/session";
+import { getIronSession } from "iron-session";
 import Link from "next/link";
 import PostDelete from "@/components/post-delete";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  const session = await auth();
+  const session = await getIronSession<SessionData>(cookies(), sessionOptions);
 
-  if (!session?.user?.id) {
+  if (!session.user?.userId) {
     redirect('/signin');
   }
 
@@ -24,15 +27,10 @@ export default async function Home() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center px-8 py-16">
         <div className="w-full max-w-5xl flex items-center justify-between mb-10">
-          {session?.user ? (
+          {session.user ? (
             <div className="flex items-center gap-4 ml-auto">
               <span className="text-white font-medium">Welcome, {session.user.name}</span>
-              <form
-                action={async () => {
-                  'use server'
-                  await signOut({ redirectTo: '/' })
-                }}
-              >
+              <form action={signOut}>
                 <button
                   type="submit"
                   className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -78,7 +76,7 @@ export default async function Home() {
                   {post.content.length > 100 ? post.content.slice(0, 100) + '...' : post.content}
                 </p>
               </div>
-              {session?.user?.id === post.authorId && (
+              {session.user?.userId === post.authorId && (
                 <div className="relative z-20 flex gap-3 mt-5">
                   <Link
                     href={`/posts/${post.id}/edit`}

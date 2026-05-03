@@ -1,12 +1,14 @@
 import { createPost } from "@/app/actions/posts";
-import { auth } from "@/auth";
 import PostForm from "@/components/post-form";
+import { sessionOptions, type SessionData } from "@/lib/session";
+import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function PostsCreate() {
-    const session = await auth();
+    const session = await getIronSession<SessionData>(cookies(), sessionOptions);
 
-    if (!session?.user) {
+    if (!session.user?.userId) {
         redirect('/signin');
     }
 

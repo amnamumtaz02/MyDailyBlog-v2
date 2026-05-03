@@ -1,11 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-// Notice the empty parentheses () here! 
-export function middleware() {
-  // Bypasses all authentication and lets the user through
-  return NextResponse.next(); 
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  if (pathname === '/signin' || pathname === '/signup') {
+    return NextResponse.next()
+  }
+
+  const sessionCookie = request.cookies.get('blog-session')
+  if (!sessionCookie) {
+    const signInUrl = new URL('/signin', request.url)
+    signInUrl.searchParams.set('next', pathname)
+    return NextResponse.redirect(signInUrl)
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: [], // Matches nothing, completely disabling route protection
-};
+  matcher: ['/', '/posts/:path*'],
+}

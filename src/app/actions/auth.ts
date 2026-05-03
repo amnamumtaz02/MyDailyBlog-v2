@@ -1,7 +1,10 @@
 'use server'
 
 import { db } from '@/db'
+import { sessionOptions, type SessionData } from '@/lib/session'
 import bcrypt from 'bcryptjs'
+import { getIronSession } from 'iron-session'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
@@ -89,5 +92,11 @@ export async function signUp(
         }
     }
 
+    redirect('/signin')
+}
+
+export async function signOut(): Promise<void> {
+    const session = await getIronSession<SessionData>(cookies(), sessionOptions)
+    await session.destroy()
     redirect('/signin')
 }

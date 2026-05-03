@@ -1,9 +1,11 @@
 'use server'
 
-import { auth } from '@/auth'
 import { db } from '@/db'
+import { sessionOptions, type SessionData } from '@/lib/session'
 import type { Post } from '@prisma/client'
+import { getIronSession } from 'iron-session'
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
@@ -24,9 +26,9 @@ export async function createPost(
     formState: PostFormState,
     formData: FormData
 ): Promise<PostFormState> {
-    const session = await auth()
+    const session = await getIronSession<SessionData>(cookies(), sessionOptions)
 
-    if (!session?.user?.id) {
+    if (!session.user?.userId) {
         redirect('/signin')
     }
 
@@ -47,7 +49,7 @@ export async function createPost(
             data: {
                 title: result.data.title,
                 content: result.data.content,
-                authorId: session.user.id,
+                authorId: session.user.userId,
             }
         })
     } catch (error: unknown) {
@@ -76,9 +78,9 @@ export async function updatePost(
     formState: PostFormState,
     formData: FormData
 ): Promise<PostFormState> {
-    const session = await auth()
+    const session = await getIronSession<SessionData>(cookies(), sessionOptions)
 
-    if (!session?.user?.id) {
+    if (!session.user?.userId) {
         redirect('/signin')
     }
 
@@ -95,7 +97,7 @@ export async function updatePost(
         }
     }
 
-    if (existingPost.authorId !== session.user.id) {
+    if (existingPost.authorId !== session.user.userId) {
         return {
             errors: {
                 _form: ['You are not allowed to edit this post.'],
@@ -147,9 +149,9 @@ export async function updatePost(
 export async function deletePost(
     id: string,
 ): Promise<PostFormState> {
-    const session = await auth()
+    const session = await getIronSession<SessionData>(cookies(), sessionOptions)
 
-    if (!session?.user?.id) {
+    if (!session.user?.userId) {
         redirect('/signin')
     }
 
@@ -166,7 +168,7 @@ export async function deletePost(
         }
     }
 
-    if (existingPost.authorId !== session.user.id) {
+    if (existingPost.authorId !== session.user.userId) {
         return {
             errors: {
                 _form: ['You are not allowed to delete this post.'],

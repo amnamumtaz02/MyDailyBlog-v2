@@ -1,6 +1,5 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
@@ -33,21 +32,25 @@ export default function SignInPage() {
         setError(null)
         setIsLoading(true)
 
-        const result = await signIn('credentials', {
-            email: trimmedEmail,
-            password,
-            redirect: false,
-            callbackUrl: '/',
+        const response = await fetch('/api/auth/signin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: trimmedEmail,
+                password,
+            }),
         })
 
         setIsLoading(false)
 
-        if (!result || result.error) {
+        if (!response.ok) {
             setError('Incorrect email or password.')
             return
         }
 
-        router.push(result.url ?? '/')
+        router.push('/')
     }
 
     return (
