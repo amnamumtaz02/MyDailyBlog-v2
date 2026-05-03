@@ -1,4 +1,4 @@
-'use server'
+
 import { db } from '@/db'
 import bcrypt from 'bcryptjs'
 import NextAuth from 'next-auth'
