@@ -4,39 +4,40 @@ pipeline {
     stages {
         stage('Clone App Repository') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/amnamumtaz02/MyDailyBlog-v2.git'
+                git branch: 'main', url: 'https://github.com/amnamumtaz02/MyDailyBlog-v2.git'
             }
         }
         stage('Build and Run App Containers') {
             steps {
                 sh 'docker compose -f docker-compose-jenkins.yml down || true'
-                sh 'docker compose -f docker-compose-jenkins.yml pull'
-                sh 'docker compose -f docker-compose-jenkins.yml up -d'
-                sh 'sleep 25'
+                sh 'docker compose -f docker-compose-jenkins.yml pull || true'
+                sh 'docker compose -f docker-compose-jenkins.yml up -d --build'
+                sh 'sleep 30'
                 sh 'docker exec blog-app-v2-jenkins npx prisma db push --accept-data-loss'
-                sh '''docker exec blog-app-v2-jenkins node -e "
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+                sh '''
+                docker exec blog-app-v2-jenkins sh -c 'cat > /tmp/seed.js << "SEEDEOF"
+const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 async function main() {
-  const hash = await bcrypt.hash('Test@1234', 10);
+  const hash = await bcrypt.hash("Test@1234", 10);
   await prisma.user.upsert({
-    where: { email: 'testuser@example.com' },
-    update: {},
-    create: { name: 'Test User', email: 'testuser@example.com', password: hash }
+    where: { email: "testuser@example.com" },
+    update: { password: hash },
+    create: { name: "Test User", email: "testuser@example.com", password: hash }
   });
-  console.log('Test user created');
+  console.log("SUCCESS: Test user seeded!");
 }
-main().then(() => prisma.\$disconnect()).catch(console.error);
-"'''
+main().catch(console.error).finally(() => prisma.$disconnect());
+SEEDEOF'
+                '''
+                sh 'docker exec blog-app-v2-jenkins node /tmp/seed.js'
             }
         }
         stage('Run Selenium Tests') {
             steps {
                 dir('tests') {
-                    git branch: 'main',
-                        url: 'https://github.com/amnamumtaz02/MyDailyBlog-Tests.git'
+                    git branch: 'main', url: 'https://github.com/amnamumtaz02/MyDailyBlog-Tests.git'
                     sh 'docker build -t mydailyblog-tests .'
                     sh 'docker run --rm --network host mydailyblog-tests'
                 }
@@ -46,18 +47,10 @@ main().then(() => prisma.\$disconnect()).catch(console.error);
     post {
         always {
             script {
-                def pusherEmail = sh(
-                    script: "git log -1 --pretty=format:'%ae'",
-                    returnStdout: true
-                ).trim()
+                def pusherEmail = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
                 emailext(
                     subject: "Test Results: ${currentBuild.result} - Build #${env.BUILD_NUMBER}",
-                    body: """
-                        <h2>MyDailyBlog CI Results</h2>
-                        <p>Status: <b>${currentBuild.result}</b></p>
-                        <p>Build: ${env.BUILD_NUMBER}</p>
-                        <p>Console: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                    """,
+                    body: "<h2>MyDailyBlog CI Results</h2><p>Status: <b>${currentBuild.result}</b></p><p>Build: ${env.BUILD_NUMBER}</p><p>Console: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
                     to: "${pusherEmail}",
                     from: "amna.mumtaz02@gmail.com",
                     mimeType: 'text/html'
