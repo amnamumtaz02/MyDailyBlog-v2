@@ -15,7 +15,7 @@ pipeline {
                 sh 'sleep 30'
                 sh 'docker exec blog-app-v2-jenkins npx prisma db push --accept-data-loss'
                 sh '''
-                docker exec blog-app-v2-jenkins sh -c 'cat > /tmp/seed.js << "SEEDEOF"
+                cat > seed.js << 'EOF'
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
@@ -29,9 +29,10 @@ async function main() {
   console.log("SUCCESS: Test user seeded!");
 }
 main().catch(console.error).finally(() => prisma.$disconnect());
-SEEDEOF'
+EOF
+                docker cp seed.js blog-app-v2-jenkins:/app/seed.js
+                docker exec blog-app-v2-jenkins node /app/seed.js
                 '''
-                sh 'docker exec blog-app-v2-jenkins node /tmp/seed.js'
             }
         }
         stage('Run Selenium Tests') {
